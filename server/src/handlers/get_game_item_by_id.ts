@@ -1,9 +1,32 @@
+import { db } from '../db';
+import { gameItemsTable } from '../db/schema';
 import { type GetGameItemByIdInput, type GameItem } from '../schema';
+import { eq, and } from 'drizzle-orm';
 
 export const getGameItemById = async (input: GetGameItemByIdInput): Promise<GameItem | null> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching a single game item by its ID from the database.
-    // This will be used when displaying the detailed modal view of an item.
-    // Returns null if the item doesn't exist or is not available.
-    return Promise.resolve(null);
+  try {
+    // Query for the specific game item by ID and ensure it's available
+    const results = await db.select()
+      .from(gameItemsTable)
+      .where(and(
+        eq(gameItemsTable.id, input.id),
+        eq(gameItemsTable.is_available, true)
+      ))
+      .execute();
+
+    if (results.length === 0) {
+      return null;
+    }
+
+    const gameItem = results[0];
+
+    // Convert numeric field back to number for the response
+    return {
+      ...gameItem,
+      price: parseFloat(gameItem.price)
+    };
+  } catch (error) {
+    console.error('Get game item by ID failed:', error);
+    throw error;
+  }
 };
